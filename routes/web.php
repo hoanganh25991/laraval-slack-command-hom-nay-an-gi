@@ -29,18 +29,47 @@ Route::get('', function(Request $req){
 	// // Handle log
 	$reqLog = fopen('req.log', 'a');
 	fwrite($reqLog, date('Y-m-dd').$requestInfo.PHP_EOL);
-	// fwrite($reqLog, date('Y-m-dd').'this from GET'.PHP_EOL);
 	fclose($reqLog);
 
 	$userName = $req->get('user_name');
-	$userText = $req->get('text');
+
+	$acceptedUserCommand = collect(['menu', 'order']);
+	$userText = preg_replace("/\s+/", " ", $req->get('text'));
+	$userTextArr = explode(' ', $userText);
+	$userTextArr['user_name'] = $userName;
+	if(!$acceptedUserCommand->contains($userTextArr[0])){
+		$userTextArr = ['menu', 'today'];
+	}
 	// Parse user text into date
 	// If not found $userText = today
-	if(empty($userText) || false){
+	if($userTextArr[0] == 'menu' || false){
 		// $userText = date('d');
-		$userText = 'today';
+		$userTextArr[1] = 'today';
 	}
 
+	$response = ['text' => 'i hear you'];
+	switch($userTextArr[0]){
+		case 'menu':
+			if(!isset($userTextArr[1])){
+				$userTextArr[1] = 'today';
+			}
+
+			$response = loadMenu($userTextArr);
+			break;
+		case 'order':
+			$reponse = 'in develop process';
+			break;
+	}
+
+	return response($response, 200, ['Content-Type' => 'application/json']);
+});
+
+// 2016-11-01
+// @bug POST not work, only GET
+// Slack custom command ONLY SEND OUT GET
+function loadMenu($userTextArr){
+	// $userName = $req->get('user_name');
+	// $userText = $req->get('text');
 	$menusFileCache = base_path('menus.json');
 	$menus = json_decode(file_get_contents($menusFileCache), true);
 
@@ -48,30 +77,24 @@ Route::get('', function(Request $req){
 	$menu = $menus[0];
 
 	$dishes = collect($menu['dishes']);
-	$dishes = $dishes->map(function($dish){
+	$dishes = $dishes->map(function($dish, $index){
+		// $tmp = [
+		// 	'value' => "[{$index}]{$dish['name']}\t{$dish['price']}",
+		// 	'short' => true
+		// ];
+		
 		$tmp = [
-			'title' => $dish['name'],
-			'value' => $dish['price'],
-			'short' => true
+			'fields' => [
+				[
+					'value' =>  "[{$index}] {$dish['name']}\t\t\t{$dish['price']},000",
+					'short' => true
+				]
+			],
+			"color" => "good"
 		];
 
 		return $tmp;
 	});
-
-	$slackMsg = [
-		'text' => "Hi, @{$userName}, menu for {$userText}",
-		'attachments' => [
-			[
-				'text' => 'Quan Chanh Cam Tuyet',
-				'fields' => $dishes
-			]
-		]	
-	];
-
-	$reqLog = fopen('req.log', 'a');
-	fwrite($reqLog, date('Y-m-dd').json_encode($slackMsg).PHP_EOL);
-	// fwrite($reqLog, date('Y-m-dd').'this from GET'.PHP_EOL);
-	fclose($reqLog);
 
 	// {
 	// 	"text": "Jenskin console output",
@@ -96,25 +119,16 @@ Route::get('', function(Request $req){
 	//         }
 	//     ]
 	// }
-	
-	return response($slackMsg, 200, ['Content-Type' => 'application/json']);
-});
+	$slackMsg = [
+		'text' => "Hi, @{$userTextArr['user_name']}, menu for {$userTextArr[1]}\nQuan Chanh Cam Tuyet\n`Type /lunch order [num] to order`>",
+		'attachments' => $dishes
+	];
 
-// 2016-11-01
-// @bug POST not work, only GET
-// Slack custom command ONLY SEND OUT GET
-// Route::post('', function(Request $req){
-// 	$requestInfo = json_encode($req->all());
+	$reqLog = fopen('req.log', 'a');
+	fwrite($reqLog, date('Y-m-dd').json_encode($slackMsg).PHP_EOL);
+	// fwrite($reqLog, date('Y-m-dd').'this from GET'.PHP_EOL);
+	fclose($reqLog);
 
-// 	// Handle log
-// 	$reqLog = fopen('req.log', 'a');
-// 	fwrite($reqLog, date('Y-m-dd').$requestInfo.PHP_EOL);
-// 	fclose($reqLog);
-
-// 	return response(['text' => 'hello ban hien'], 200, ['Content-Type' => 'application/json']);
-// });
-
-Route::post('menu', function(Request $req){
-
-});
+	return $slackMsg;
+}
 
