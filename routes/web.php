@@ -133,7 +133,7 @@ function loadMenu($userTextArr){
             	// 'fields' => $dishes,
             	'fields' => $dishesV2,
             	'color' => '#3AA3E3',
-            	'footer' => 'Type `/lunch order [num] to order`',
+            	'footer' => 'Type `/lunch order [num]` to order',
             	// 'footer_icon' => 'https://platform.slack-edge.com/img/default_application_icon.png'
             	// 'footer_icon' => 'https://tinker.press/favicon.ico'
             	// 'footer_icon' => 'https://tinker.press/knight-sinhvienit.png',
