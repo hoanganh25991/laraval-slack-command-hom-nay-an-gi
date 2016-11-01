@@ -77,23 +77,27 @@ function loadMenu($userTextArr){
 	$menu = $menus[0];
 
 	$dishes = collect($menu['dishes']);
-	$dishes = $dishes->map(function($dish, $index){
-		// $tmp = [
-		// 	'value' => "[{$index}]{$dish['name']}\t{$dish['price']}",
-		// 	'short' => true
-		// ];
+	// $dishes = $dishes->map(function($dish, $index){
+	// 	$tmp = [
+	// 		'value' => "`[{$index}]` {$dish['name']}\t{$dish['price']},000",
+	// 		'short' => true
+	// 	];
 		
+	// 	return $tmp;
+	// });
+	$dishesV2 = collect([]);
+	$dishes->each(function($dish, $index) use($dishesV2){
 		$tmp = [
-			'fields' => [
-				[
-					'value' =>  "[{$index}] {$dish['name']}\t\t\t{$dish['price']},000",
-					'short' => true
-				]
-			],
-			"color" => "good"
+			'value' => "[{$index}] {$dish['name']}",
+			'short' => true
 		];
+		$dishesV2->push($tmp);
 
-		return $tmp;
+		$tmp = [
+			'value' => "{$dish['price']},000",
+			'short' => true
+		];
+		$dishesV2->push($tmp);
 	});
 
 	// {
@@ -120,8 +124,23 @@ function loadMenu($userTextArr){
 	//     ]
 	// }
 	$slackMsg = [
-		'text' => "Hi, @{$userTextArr['user_name']}, menu for {$userTextArr[1]}\nQuan Chanh Cam Tuyet\n`Type /lunch order [num] to order`>",
-		'attachments' => $dishes
+		'text' => "Hi, @{$userTextArr['user_name']}, menu for {$userTextArr[1]}",
+		// 'attachments' => $dishes
+		'attachments' => [
+			[
+				'title' => 'Quan Chanh Cam Tuyet',
+            	'title_link' => 'https://api.slack.com/',
+            	// 'fields' => $dishes,
+            	'fields' => $dishesV2,
+            	'color' => '#3AA3E3',
+            	'footer' => 'Type `/lunch order [num] to order`',
+            	// 'footer_icon' => 'https://platform.slack-edge.com/img/default_application_icon.png'
+            	// 'footer_icon' => 'https://tinker.press/favicon.ico'
+            	// 'footer_icon' => 'https://tinker.press/knight-sinhvienit.png',
+            	'footer_icon' => 'https://tinker.press/favicon-64x64.png',
+            	'ts' => time()
+			]
+		]
 	];
 
 	$reqLog = fopen('req.log', 'a');
